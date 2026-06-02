@@ -111,9 +111,11 @@ def feed(request):
     books = Book.objects.annotate(
         likes_count=Count('likes', distinct=True),
         comments_count=Count('comments', distinct=True)
-    ).order_by('-created_at')
+    ).order_by('-created_at').prefetch_related('comments', 'comments__user')
     
-    return render(request, 'books/feed.html', {'books': books})
+    user_likes = list(Like.objects.filter(user=request.user).values_list('book_id', flat=True))
+    
+    return render(request, 'books/feed.html', {'books': books, 'user_likes': user_likes})
 
 @login_required
 def like_book(request, pk):
@@ -130,7 +132,7 @@ def add_comment(request, pk):
     if request.method == 'POST':
         book = get_object_or_404(Book, pk=pk)
         content = request.POST.get('content')
-        is_recommended = request.POST.get('is_recommended') == 'on'
+        is_recommended = request.POST.get('is_recommended') == 'yes'
         if content:
             Comment.objects.create(
                 user=request.user,

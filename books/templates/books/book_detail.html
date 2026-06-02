@@ -89,12 +89,22 @@
                     <div class="mb-3">
                         <textarea name="content" rows="3" class="form-control bg-dark text-white border-secondary" placeholder="Bu kitap hakkında ne düşünüyorsun?" required></textarea>
                     </div>
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div class="form-check form-switch">
-                            <input class="form-check-input" type="checkbox" role="switch" id="isRecommended" name="is_recommended" checked>
-                            <label class="form-check-label text-white" for="isRecommended">Bu kitabı öneriyorum</label>
+                    <div class="d-flex flex-column mb-4">
+                        <label class="text-white mb-2 fw-bold">Bu kitabı diğerlerine önerir misin?</label>
+                        <div class="d-flex gap-3">
+                            <input type="radio" class="btn-check" name="is_recommended" id="btnRecYes" value="yes" required>
+                            <label class="btn btn-outline-success flex-grow-1 py-2" for="btnRecYes">
+                                <i class="fas fa-thumbs-up me-2"></i>Öneriyorum
+                            </label>
+
+                            <input type="radio" class="btn-check" name="is_recommended" id="btnRecNo" value="no" required>
+                            <label class="btn btn-outline-danger flex-grow-1 py-2" for="btnRecNo">
+                                <i class="fas fa-thumbs-down me-2"></i>Önermiyorum
+                            </label>
                         </div>
-                        <button type="submit" class="btn btn-primary px-4 rounded-pill">Yorum Yap</button>
+                    </div>
+                    <div class="text-end">
+                        <button type="submit" class="btn btn-primary px-5 py-2 rounded-pill fw-bold">Gönder</button>
                     </div>
                 </form>
                 

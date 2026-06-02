@@ -50,5 +50,8 @@ class Comment(models.Model):
     is_recommended = models.BooleanField(default=True, verbose_name="Öneriyor mu?")
     created_at = models.DateTimeField(auto_now_add=True)
 
+    class Meta:
+        ordering = ['-created_at']
+
     def __str__(self):
         return f"Comment by {self.user.username} on {self.book.title}"
