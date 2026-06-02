@@ -1,0 +1,133 @@
+{% extends 'books/base.html' %}
+{% block content %}
+<div class="row align-items-center mb-5">
+    <div class="col-md-6">
+        <h1 class="display-5 fw-bold mb-0">Kitaplarım</h1>
+        <p class="text-muted">Kütüphanenizdeki tüm kitapları buradan yönetebilirsiniz.</p>
+    </div>
+    <div class="col-md-6 text-md-end">
+        <a href="{% url 'book_create' %}" class="btn btn-primary btn-lg shadow-sm">
+            <i class="fas fa-plus-circle me-2"></i>Yeni Kitap Ekle
+        </a>
+    </div>
+</div>
+
+<div class="card bg-dark border-secondary mb-5 shadow-sm">
+    <div class="card-body p-4">
+        <form method="get" class="row g-3">
+            <div class="col-md-7">
+                <div class="input-group">
+                    <span class="input-group-text bg-transparent border-secondary text-muted">
+                        <i class="fas fa-search"></i>
+                    </span>
+                    <input type="text" name="q" class="form-control bg-transparent border-secondary text-white" 
+                           placeholder="Kitap veya yazar ara..." value="{{ request.GET.q }}">
+                </div>
+            </div>
+            <div class="col-md-2">
+                <select name="status" class="form-select bg-dark border-secondary text-white">
+                    <option value="">Tüm Durumlar</option>
+                    <option value="okunacak" {% if request.GET.status == 'okunacak' %}selected{% endif %}>Okunacak</option>
+                    <option value="okunuyor" {% if request.GET.status == 'okunuyor' %}selected{% endif %}>Okunuyor</option>
+                    <option value="okundu" {% if request.GET.status == 'okundu' %}selected{% endif %}>Okundu</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select name="category" class="form-select bg-dark border-secondary text-white">
+                    <option value="">Tüm Kategoriler</option>
+                    {% for cat in categories %}
+                        <option value="{{ cat.id }}" {% if request.GET.category == cat.id|stringformat:"i" %}selected{% endif %}>{{ cat.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-1">
+                <button type="submit" class="btn btn-outline-primary w-100">
+                    <i class="fas fa-filter"></i>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% if books %}
+<div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+    {% for book in books %}
+    <div class="col">
+        <div class="card h-100 bg-dark border-secondary hover-shadow transition-all" style="border-radius: 15px; border: 1px solid rgba(255,255,255,0.1) !important;">
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <span class="badge 
+                        {% if book.status == 'okundu' %}bg-success-subtle text-success
+                        {% elif book.status == 'okunuyor' %}bg-primary-subtle text-primary
+                        {% else %}bg-danger-subtle text-danger{% endif %} px-3 py-2 rounded-pill">
+                        {{ book.get_status_display }}
+                    </span>
+                    <div class="dropdown">
+                        <button class="btn btn-link text-muted p-0" data-bs-toggle="dropdown">
+                            <i class="fas fa-ellipsis-v"></i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end dropdown-menu-dark">
+                            <li><a class="dropdown-item" href="{% url 'book_update' book.pk %}"><i class="fas fa-edit me-2"></i>Düzenle</a></li>
+                            <li><a class="dropdown-item text-danger" href="{% url 'book_delete' book.pk %}"><i class="fas fa-trash-alt me-2"></i>Sil</a></li>
+                        </ul>
+                    </div>
+                </div>
+                <h4 class="card-title fw-bold text-white mb-2">{{ book.title }}</h4>
+                <p class="text-muted mb-3"><i class="fas fa-pen-nib me-2"></i>{{ book.author }}</p>
+                
+                {% if book.category %}
+                <div class="d-flex align-items-center text-secondary small mb-4">
+                    <i class="fas fa-folder-open me-2"></i> {{ book.category }}
+                </div>
+                {% endif %}
+                
+                <div class="mt-auto">
+                    <a href="{% url 'book_detail' book.pk %}" class="btn btn-outline-light btn-sm w-100 rounded-pill">Detayı Gör</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Pagination -->
+{% if books.has_other_pages %}
+<nav class="mt-5">
+    <ul class="pagination justify-content-center">
+        {% if books.has_previous %}
+            <li class="page-item"><a class="page-link bg-dark border-secondary text-white" href="?page={{ books.previous_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}">&laquo;</a></li>
+        {% endif %}
+        
+        <li class="page-item active"><span class="page-link bg-primary border-primary">{{ books.number }}</span></li>
+        
+        {% if books.has_next %}
+            <li class="page-item"><a class="page-link bg-dark border-secondary text-white" href="?page={{ books.next_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}">&raquo;</a></li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+
+{% else %}
+<div class="text-center py-5">
+    <div class="mb-4">
+        <i class="fas fa-book-open display-1 text-secondary opacity-25"></i>
+    </div>
+    <h3 class="text-muted">Henüz hiç kitap eklenmemiş.</h3>
+    <p class="text-secondary mb-4">Okumaya başlamak için ilk kitabınızı ekleyin!</p>
+    <a href="{% url 'book_create' %}" class="btn btn-primary px-5 py-3">
+        <i class="fas fa-plus me-2"></i>Hemen Başla
+    </a>
+</div>
+{% endif %}
+
+<style>
+    .hover-shadow:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        border-color: var(--primary-color) !important;
+    }
+    .transition-all {
+        transition: all 0.3s ease;
+    }
+</style>
+{% endblock %}

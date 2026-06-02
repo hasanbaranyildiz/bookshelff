@@ -1,0 +1,64 @@
+{% extends 'books/base.html' %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        <div class="card bg-dark border-secondary shadow-lg" style="border-radius: 20px;">
+            <div class="card-body p-5">
+                <div class="text-center mb-4">
+                    <div class="display-6 mb-2">{% if title == 'Kitap Ekle' %}<i class="fas fa-plus-circle text-primary"></i>{% else %}<i class="fas fa-edit text-primary"></i>{% endif %}</div>
+                    <h2 class="fw-bold text-white">{{ title }}</h2>
+                    <p class="text-muted">Kitap bilgilerini aşağıya girin.</p>
+                </div>
+
+                <form method="POST">
+                    {% csrf_token %}
+                    
+                    {% for field in form %}
+                    <div class="mb-4">
+                        <label for="{{ field.id_for_label }}" class="form-label fw-semibold text-secondary small text-uppercase tracking-wider">
+                            {{ field.label }}
+                        </label>
+                        {{ field }}
+                        {% if field.errors %}
+                            <div class="text-danger small mt-2">
+                                {% for error in field.errors %}
+                                    <i class="fas fa-exclamation-circle me-1"></i>{{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        {% if field.help_text %}
+                            <div class="form-text text-muted small mt-2">{{ field.help_text }}</div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+
+                    <div class="d-grid gap-2 mt-5">
+                        <button type="submit" class="btn btn-primary py-3 fw-bold">
+                            {% if title == 'Kitap Ekle' %}Kitabı Kaydet{% else %}Değişiklikleri Kaydet{% endif %}
+                        </button>
+                        <a href="{% url 'book_list' %}" class="btn btn-link text-muted text-decoration-none">Vazgeç</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .form-control, .form-select {
+        background-color: #0f172a !important;
+        border: 1px solid #334155 !important;
+        color: white !important;
+        padding: 0.8rem 1rem !important;
+        border-radius: 12px !important;
+        transition: all 0.3s ease !important;
+    }
+    .form-control:focus, .form-select:focus {
+        border-color: var(--primary-color) !important;
+        box-shadow: 0 0 0 4px rgba(124, 58, 237, 0.15) !important;
+    }
+    .tracking-wider {
+        letter-spacing: 0.05em;
+    }
+</style>
+{% endblock %}

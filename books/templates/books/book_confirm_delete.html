@@ -1,0 +1,30 @@
+{% extends 'books/base.html' %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6 col-lg-5">
+        <div class="card bg-dark border-danger shadow-lg" style="border-radius: 20px; border-width: 2px !important;">
+            <div class="card-body p-5 text-center">
+                <div class="mb-4">
+                    <i class="fas fa-exclamation-triangle display-1 text-danger"></i>
+                </div>
+                <h2 class="fw-bold text-white mb-3">Emin misiniz?</h2>
+                <p class="text-muted mb-5 text-start">
+                    <strong>"{{ book.title }}"</strong> adlı kitabı silmek üzeresiniz. Bu işlem geri alınamaz ve tüm kayıtlar kalıcı olarak silinecektir.
+                </p>
+                
+                <form method="POST">
+                    {% csrf_token %}
+                    <div class="d-grid gap-3">
+                        <button type="submit" class="btn btn-danger py-3 fw-bold">
+                            <i class="fas fa-trash-alt me-2"></i>Evet, Kalıcı Olarak Sil
+                        </button>
+                        <a href="{% url 'book_detail' book.pk %}" class="btn btn-outline-secondary py-3">
+                            Hayır, Vazgeç
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

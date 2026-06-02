@@ -1,0 +1,140 @@
+{% extends 'books/base.html' %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-10 col-lg-8">
+        <nav aria-label="breadcrumb" class="mb-4">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'book_list' %}" class="text-primary text-decoration-none">Kitaplarım</a></li>
+                <li class="breadcrumb-item active text-muted" aria-current="page">Kitap Detayı</li>
+            </ol>
+        </nav>
+
+        <div class="card bg-dark border-secondary shadow-lg overflow-hidden" style="border-radius: 24px; border: 1px solid rgba(255,255,255,0.1) !important;">
+            <div class="row g-0">
+                <div class="col-md-4 bg-gradient-primary d-flex align-items-center justify-content-center py-5">
+                    <i class="fas fa-book display-1 text-white opacity-50"></i>
+                </div>
+                <div class="col-md-8">
+                    <div class="card-body p-5">
+                        <div class="d-flex justify-content-between align-items-start mb-4">
+                            <div>
+                                <span class="badge 
+                                    {% if book.status == 'okundu' %}bg-success-subtle text-success
+                                    {% elif book.status == 'okunuyor' %}bg-primary-subtle text-primary
+                                    {% else %}bg-danger-subtle text-danger{% endif %} px-3 py-2 rounded-pill mb-3">
+                                    {{ book.get_status_display }}
+                                </span>
+                                <h1 class="display-6 fw-bold text-white mb-2">{{ book.title }}</h1>
+                                <p class="fs-5 text-muted"><i class="fas fa-pen-nib me-2"></i>{{ book.author }}</p>
+                            </div>
+                        </div>
+
+                        <hr class="border-secondary opacity-25 mb-4">
+
+                        <div class="mb-4">
+                            <h6 class="text-uppercase text-secondary tracking-wider small fw-bold mb-3">Açıklama</h6>
+                            <p class="text-light leading-relaxed">
+                                {% if book.description %}
+                                    {{ book.description }}
+                                {% else %}
+                                    <span class="text-muted italic">Bu kitap için bir açıklama eklenmemiş.</span>
+                                {% endif %}
+                            </p>
+                        </div>
+
+                        <div class="row g-4 mb-5">
+                            {% if book.category %}
+                            <div class="col-sm-6">
+                                <h6 class="text-uppercase text-secondary tracking-wider small fw-bold mb-2">Kategori</h6>
+                                <p class="text-white"><i class="fas fa-folder-open me-2 text-primary"></i>{{ book.category }}</p>
+                            </div>
+                            {% endif %}
+                            <div class="col-sm-6">
+                                <h6 class="text-uppercase text-secondary tracking-wider small fw-bold mb-2">Eklenme Tarihi</h6>
+                                <p class="text-white"><i class="fas fa-calendar-alt me-2 text-primary"></i>{{ book.created_at|date:"d F Y" }}</p>
+                            </div>
+                        </div>
+
+                        {% if book.owner == request.user %}
+                        <div class="d-flex gap-3">
+                            <a href="{% url 'book_update' book.pk %}" class="btn btn-primary px-4 py-2">
+                                <i class="fas fa-edit me-2"></i>Düzenle
+                            </a>
+                            <a href="{% url 'book_delete' book.pk %}" class="btn btn-outline-danger px-4 py-2">
+                                <i class="fas fa-trash-alt me-2"></i>Sil
+                            </a>
+                        </div>
+                        {% endif %}
+                        
+                        <div class="mt-4 d-flex align-items-center">
+                            <a href="{% url 'like_book' book.pk %}" class="btn {% if is_liked %}btn-danger{% else %}btn-outline-danger{% endif %} rounded-pill px-4">
+                                <i class="fas fa-heart me-2"></i>{% if is_liked %}Beğendin{% else %}Beğen{% endif %}
+                            </a>
+                            <span class="text-white ms-3 fw-bold"><i class="fas fa-chart-line text-info me-2"></i>%{{ recommendation_percentage }} Öneriyor</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+</div>
+
+        <!-- Comments Section -->
+        <div class="card bg-black border-secondary shadow-lg mt-5 mb-5" style="border-radius: 24px; border: 1px solid rgba(255,255,255,0.1) !important;">
+            <div class="card-body p-5">
+                <h3 class="text-white mb-4"><i class="fas fa-comments text-primary me-2"></i>Yorumlar</h3>
+                
+                <!-- Comment Form -->
+                <form action="{% url 'add_comment' book.pk %}" method="post" class="mb-5">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <textarea name="content" rows="3" class="form-control bg-dark text-white border-secondary" placeholder="Bu kitap hakkında ne düşünüyorsun?" required></textarea>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" role="switch" id="isRecommended" name="is_recommended" checked>
+                            <label class="form-check-label text-white" for="isRecommended">Bu kitabı öneriyorum</label>
+                        </div>
+                        <button type="submit" class="btn btn-primary px-4 rounded-pill">Yorum Yap</button>
+                    </div>
+                </form>
+                
+                <!-- Comment List -->
+                <div class="comments-list">
+                    {% for comment in comments %}
+                    <div class="d-flex mb-4 pb-4 border-bottom border-secondary">
+                        <div class="me-3">
+                            <i class="fas fa-user-circle fa-3x text-secondary"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <h6 class="text-white fw-bold mb-0">{{ comment.user.username }}</h6>
+                                <small class="text-muted">{{ comment.created_at|date:"d M Y H:i" }}</small>
+                            </div>
+                            <div class="mb-2">
+                                {% if comment.is_recommended %}
+                                <span class="badge bg-success-subtle text-success"><i class="fas fa-thumbs-up me-1"></i>Öneriyor</span>
+                                {% else %}
+                                <span class="badge bg-danger-subtle text-danger"><i class="fas fa-thumbs-down me-1"></i>Önermiyor</span>
+                                {% endif %}
+                            </div>
+                            <p class="text-light mb-0">{{ comment.content }}</p>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <p class="text-muted text-center italic py-4">Henüz yorum yapılmamış. İlk yorumu sen yap!</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .bg-gradient-primary {
+        background: linear-gradient(135deg, #7c3aed 0%, #4c1d95 100%);
+    }
+    .tracking-wider { letter-spacing: 0.1em; }
+    .leading-relaxed { line-height: 1.7; }
+    .italic { font-style: italic; }
+</style>
+{% endblock %}
