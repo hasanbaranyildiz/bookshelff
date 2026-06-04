@@ -1,12 +1,14 @@
+import json
+from django.http import JsonResponse
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.core.paginator import Paginator
-from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth import login
+from .forms import BookForm, CustomUserCreationForm
 from .models import Book, Category, Like, Comment
 from django.db.models import Count
-from .forms import BookForm
+
 
 
 @login_required
@@ -95,14 +97,14 @@ def book_delete(request, pk):
 def signup(request):
     """Kullanıcı kayıt sayfası"""
     if request.method == 'POST':
-        form = UserCreationForm(request.POST)
+        form = CustomUserCreationForm(request.POST)
         if form.is_valid():
             user = form.save()
             login(request, user)
             messages.success(request, 'Hesabın oluşturuldu, hoş geldin!')
             return redirect('book_list')
     else:
-        form = UserCreationForm()
+        form = CustomUserCreationForm()
     return render(request, 'registration/signup.html', {'form': form})
 
 @login_required
@@ -142,3 +144,83 @@ def add_comment(request, pk):
             )
             messages.success(request, 'Yorumunuz eklendi.')
     return redirect('book_detail', pk=pk)
+
+@login_required
+def chatbot_api(request):
+    """BookShelf Asistan API endpoint"""
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            action = data.get('action')
+            
+            if action == 'read_books':
+                books = Book.objects.filter(owner=request.user, status='okundu')
+                count = books.count()
+                if count == 0:
+                    response_text = "Şu ana kadar okuduğun kitap bulunmuyor. Hadi yeni bir kitap ekleyelim!"
+                else:
+                    book_titles = ", ".join([b.title for b in books])
+                    response_text = f"Şu ana kadar toplam {count} kitap okudun. İşte okuduğun kitaplar: {book_titles}"
+                    
+            elif action == 'to_read_books':
+                books = Book.objects.filter(owner=request.user, status='okunacak')
+                count = books.count()
+                if count == 0:
+                    response_text = "Okunacaklar listende kitap bulunmuyor."
+                else:
+                    book_titles = ", ".join([b.title for b in books])
+                    response_text = f"Okuma sırana eklediğin {count} kitap var: {book_titles}"
+                    
+            elif action == 'all_books':
+                books = Book.objects.filter(owner=request.user)
+                if not books.exists():
+                    response_text = "Kütüphanende henüz hiç kitap yok."
+                else:
+                    status_dict = {'okundu': 'Okundu', 'okunuyor': 'Okunuyor', 'okunacak': 'Okunacak'}
+                    book_list = [f"{b.title} ({status_dict.get(b.status, b.status)})" for b in books]
+                    response_text = "Kütüphanendeki tüm kitaplar:\n- " + "\n- ".join(book_list)
+                    
+            elif action == 'recommend_books':
+                user_book_titles = set(Book.objects.filter(owner=request.user).values_list('title', flat=True))
+                classics = [
+                    "İlahi Komedi - Dante Alighieri",
+                    "Anna Karenina - Lev Tolstoy",
+                    "Don Kişot - Cervantes",
+                    "Gurur ve Önyargı - Jane Austen",
+                    "Küçük Prens - Antoine de Saint-Exupéry",
+                    "Yüzyıllık Yalnızlık - Gabriel García Márquez",
+                    "Vadideki Zambak - Honoré de Balzac",
+                    "Bülbülü Öldürmek - Harper Lee"
+                ]
+                
+                recommended = []
+                for classic in classics:
+                    title_only = classic.split(" - ")[0]
+                    already_have = False
+                    for u_title in user_book_titles:
+                        if title_only.lower() in u_title.lower():
+                            already_have = True
+                            break
+                    if not already_have:
+                        recommended.append(classic)
+                
+                import random
+                if len(recommended) > 3:
+                    recommended = random.sample(recommended, 3)
+                
+                if recommended:
+                    response_text = "İşte sana özel birkaç harika dünya klasiği önerisi:\n- " + "\n- ".join(recommended)
+                else:
+                    response_text = "Harikasın! Görünen o ki sana önerebileceğim tüm popüler klasikleri çoktan kütüphanene eklemişsin."
+                    
+            elif action == 'password_help':
+                response_text = "Şifreni sıfırlamak için:\n1. Giriş sayfasındaki 'Şifremi Unuttum' linkine tıkla.\n2. Kayıtlı e-posta adresini gir.\n3. Gelen e-postadaki linke tıklayıp yeni şifreni belirle.\n\nVeya doğrudan şu adresi ziyaret et: /password-reset/"
+                
+            else:
+                response_text = "Üzgünüm, bu komutu anlayamadım."
+                
+            return JsonResponse({'status': 'success', 'response': response_text})
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+    
+    return JsonResponse({'status': 'error', 'message': 'Only POST allowed'}, status=405)

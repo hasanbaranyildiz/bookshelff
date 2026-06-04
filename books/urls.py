@@ -10,4 +10,5 @@ urlpatterns = [
     path('feed/', views.feed, name='feed'),
     path('book/<int:pk>/like/', views.like_book, name='like_book'),
     path('book/<int:pk>/comment/', views.add_comment, name='add_comment'),
+    path('chatbot/', views.chatbot_api, name='chatbot_api'),
 ]

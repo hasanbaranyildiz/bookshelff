@@ -33,7 +33,10 @@
                     </div>
 
                     <div class="text-center">
-                        <p class="text-muted small mb-0">Hesabınız yok mu? <a href="{% url 'signup' %}" class="text-primary text-decoration-none fw-bold">Kayıt Ol</a></p>
+                        <p class="text-muted small mb-2">Hesabınız yok mu? <a href="{% url 'signup' %}" class="text-primary text-decoration-none fw-bold">Kayıt Ol</a></p>
+                        <a href="{% url 'password_reset' %}" class="text-warning text-decoration-none small">
+                            <i class="fas fa-key me-1"></i>Şifremi Unuttum
+                        </a>
                     </div>
                 </form>
             </div>

@@ -1,5 +1,20 @@
 from django import forms
 from .models import Book, Category
+from django.contrib.auth.models import User
+from django.contrib.auth.forms import UserCreationForm
+
+class CustomUserCreationForm(UserCreationForm):
+    email = forms.EmailField(required=True, help_text='Şifre sıfırlama işlemleri için gereklidir.')
+
+    class Meta(UserCreationForm.Meta):
+        model = User
+        fields = UserCreationForm.Meta.fields + ('email',)
+
+    def clean_email(self):
+        email = self.cleaned_data.get('email')
+        if User.objects.filter(email=email).exists():
+            raise forms.ValidationError("Bu e-posta adresi zaten kullanımda. Lütfen başka bir e-posta adresi deneyin.")
+        return email
 
 
 class BookForm(forms.ModelForm):
