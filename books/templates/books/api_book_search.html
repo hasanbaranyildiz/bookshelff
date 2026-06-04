@@ -17,10 +17,14 @@
         </div>
     </div>
 
-    {% if query %}
+    {% if books %}
         <div class="row">
             <div class="col-12 mb-4">
-                <h4 style="color: var(--text-color);">"{{ query }}" için arama sonuçları:</h4>
+                {% if query %}
+                    <h4 style="color: var(--text-color);">"{{ query }}" için arama sonuçları:</h4>
+                {% else %}
+                    <h4 style="color: var(--text-color);">Popüler Klasikler ve Yazarlar:</h4>
+                {% endif %}
             </div>
             
             {% if books %}

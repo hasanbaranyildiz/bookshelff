@@ -107,7 +107,12 @@ def book_search_api(request):
     books_data = []
     
     if query:
-        url = f"https://www.googleapis.com/books/v1/volumes?q={query}&maxResults=10"
+        url = f"https://www.googleapis.com/books/v1/volumes?q={query}&maxResults=12"
+    else:
+        # Varsayılan popüler kitaplar (Dünya klasikleri ve Türk yazarlar)
+        url = "https://www.googleapis.com/books/v1/volumes?q=inauthor:Sabahattin Ali+OR+inauthor:Tolstoy+OR+inauthor:Dostoyevski+OR+intitle:Şeker Portakalı+OR+intitle:Suç ve Ceza&maxResults=12&orderBy=relevance"
+        
+    try:
         response = requests.get(url)
         
         if response.status_code == 200:
@@ -123,7 +128,9 @@ def book_search_api(request):
                     'description': vol_info.get('description', 'Açıklama bulunmuyor.'),
                     'thumbnail': vol_info.get('imageLinks', {}).get('thumbnail', ''),
                 })
-                
+    except requests.RequestException:
+        pass
+        
     return render(request, 'books/api_book_search.html', {'books': books_data, 'query': query})
 
 
