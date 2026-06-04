@@ -22,7 +22,7 @@ class BookForm(forms.ModelForm):
     
     class Meta:
         model = Book
-        fields = ['title', 'author', 'description', 'category', 'status']
+        fields = ['title', 'author', 'description', 'category', 'status', 'page_count', 'current_page', 'start_date', 'end_date', 'cover_image', 'rating']
         widgets = {
             'title': forms.TextInput(attrs={
                 'class': 'form-control',
@@ -43,4 +43,10 @@ class BookForm(forms.ModelForm):
             'status': forms.Select(attrs={
                 'class': 'form-select'
             }),
+            'page_count': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Toplam sayfa'}),
+            'current_page': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Okunan sayfa'}),
+            'start_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'end_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'cover_image': forms.FileInput(attrs={'class': 'form-control'}),
+            'rating': forms.Select(attrs={'class': 'form-select'}),
         }

@@ -25,10 +25,28 @@
                 
                 <!-- Post Content (Book Cover Simulation) -->
                 <div class="card-body p-0 position-relative">
-                    <div class="book-cover-area d-flex flex-column justify-content-center align-items-center text-center p-5">
-                        <i class="fas fa-book display-2 text-white opacity-75 mb-4 shadow-icon"></i>
-                        <h2 class="fw-bold text-white mb-2 book-title">{{ book.title }}</h2>
-                        <p class="text-white-50 fs-5 mb-0 fst-italic book-author">{{ book.author }}</p>
+                    <div class="book-cover-area d-flex flex-column justify-content-center align-items-center text-center position-relative overflow-hidden" {% if not book.cover_image %}style="padding: 3rem;"{% endif %}>
+                        {% if book.cover_image %}
+                            <img src="{{ book.cover_image.url }}" alt="{{ book.title }}" class="w-100 h-100 position-absolute" style="object-fit: cover; object-position: center; z-index: 1;">
+                            <div class="position-absolute w-100 h-100 bg-black opacity-50" style="z-index: 2;"></div>
+                        {% else %}
+                            <i class="fas fa-book display-2 text-white opacity-75 mb-4 shadow-icon"></i>
+                        {% endif %}
+                        <div class="position-relative" style="z-index: 3; padding: 2rem;">
+                            <h2 class="fw-bold text-white mb-2 book-title">{{ book.title }}</h2>
+                            <p class="text-white-50 fs-5 mb-2 fst-italic book-author">{{ book.author }}</p>
+                            {% if book.rating %}
+                            <div class="text-warning">
+                                {% for i in "12345"|make_list %}
+                                    {% if forloop.counter <= book.rating %}
+                                        <i class="fas fa-star shadow-icon"></i>
+                                    {% else %}
+                                        <i class="far fa-star shadow-icon"></i>
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
                     </div>
                     {% if book.category %}
                     <span class="position-absolute bottom-0 start-0 m-3 badge bg-black bg-opacity-75 text-white border border-secondary" style="backdrop-filter: blur(5px);">

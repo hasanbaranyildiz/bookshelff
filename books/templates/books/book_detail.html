@@ -11,8 +11,12 @@
 
         <div class="card bg-dark border-secondary shadow-lg overflow-hidden" style="border-radius: 24px; border: 1px solid rgba(255,255,255,0.1) !important;">
             <div class="row g-0">
-                <div class="col-md-4 bg-gradient-primary d-flex align-items-center justify-content-center py-5">
-                    <i class="fas fa-book display-1 text-white opacity-50"></i>
+                <div class="col-md-4 bg-gradient-primary d-flex align-items-center justify-content-center position-relative overflow-hidden" style="min-height: 300px;">
+                    {% if book.cover_image %}
+                        <img src="{{ book.cover_image.url }}" alt="{{ book.title }} Kapağı" class="position-absolute w-100 h-100" style="object-fit: cover; object-position: center;">
+                    {% else %}
+                        <i class="fas fa-book display-1 text-white opacity-50"></i>
+                    {% endif %}
                 </div>
                 <div class="col-md-8">
                     <div class="card-body p-5">
@@ -28,11 +32,35 @@
                                     <i class="fas fa-eye me-1"></i> {{ book.views_count }} Görüntülenme
                                 </span>
                                 <h1 class="display-6 fw-bold text-white mb-2">{{ book.title }}</h1>
-                                <p class="fs-5 text-muted"><i class="fas fa-pen-nib me-2"></i>{{ book.author }}</p>
+                                <p class="fs-5 text-muted mb-2"><i class="fas fa-pen-nib me-2"></i>{{ book.author }}</p>
+                                {% if book.rating %}
+                                <div class="text-warning mb-3">
+                                    {% for i in "12345"|make_list %}
+                                        {% if forloop.counter <= book.rating %}
+                                            <i class="fas fa-star"></i>
+                                        {% else %}
+                                            <i class="far fa-star"></i>
+                                        {% endif %}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
                             </div>
                         </div>
 
                         <hr class="border-secondary opacity-25 mb-4">
+
+                        {% if book.page_count %}
+                        <div class="mb-4">
+                            <div class="d-flex justify-content-between text-secondary small fw-bold mb-2">
+                                <span>Okuma İlerlemesi</span>
+                                <span>{{ book.current_page|default:0 }} / {{ book.page_count }} Sayfa</span>
+                            </div>
+                            <div class="progress bg-dark border border-secondary" style="height: 10px; border-radius: 5px;">
+                                <!-- Calculate percentage (current / total * 100) using a trick or width ratio -->
+                                <div class="progress-bar bg-success" role="progressbar" style="width: {% widthratio book.current_page|default:0 book.page_count 100 %}%;" aria-valuenow="{{ book.current_page|default:0 }}" aria-valuemin="0" aria-valuemax="{{ book.page_count }}"></div>
+                            </div>
+                        </div>
+                        {% endif %}
 
                         <div class="mb-4">
                             <h6 class="text-uppercase text-secondary tracking-wider small fw-bold mb-3">Açıklama</h6>
@@ -52,10 +80,22 @@
                                 <p class="text-white"><i class="fas fa-folder-open me-2 text-primary"></i>{{ book.category }}</p>
                             </div>
                             {% endif %}
+                            
+                            {% if book.start_date or book.end_date %}
+                            <div class="col-sm-6">
+                                <h6 class="text-uppercase text-secondary tracking-wider small fw-bold mb-2">Okuma Tarihleri</h6>
+                                <p class="text-white">
+                                    <i class="far fa-calendar text-primary me-2"></i>
+                                    {% if book.start_date %}{{ book.start_date|date:"d M Y" }}{% else %}?{% endif %} - 
+                                    {% if book.end_date %}{{ book.end_date|date:"d M Y" }}{% else %}Devam Ediyor{% endif %}
+                                </p>
+                            </div>
+                            {% else %}
                             <div class="col-sm-6">
                                 <h6 class="text-uppercase text-secondary tracking-wider small fw-bold mb-2">Eklenme Tarihi</h6>
                                 <p class="text-white"><i class="fas fa-calendar-alt me-2 text-primary"></i>{{ book.created_at|date:"d F Y" }}</p>
                             </div>
+                            {% endif %}
                         </div>
 
                         {% if book.owner == request.user %}

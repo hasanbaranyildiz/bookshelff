@@ -26,6 +26,12 @@ class Book(models.Model):
     category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True)
     owner = models.ForeignKey(User, on_delete=models.CASCADE)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='okunacak')
+    page_count = models.PositiveIntegerField(null=True, blank=True, verbose_name="Sayfa Sayısı")
+    current_page = models.PositiveIntegerField(default=0, verbose_name="Okunan Sayfa")
+    start_date = models.DateField(null=True, blank=True, verbose_name="Başlama Tarihi")
+    end_date = models.DateField(null=True, blank=True, verbose_name="Bitirme Tarihi")
+    cover_image = models.ImageField(upload_to='book_covers/', null=True, blank=True, verbose_name="Kitap Kapağı")
+    rating = models.PositiveIntegerField(null=True, blank=True, verbose_name="Puan", choices=[(i, i) for i in range(1, 6)])
     views_count = models.PositiveIntegerField(default=0, verbose_name="Görüntülenme Sayısı")
     created_at = models.DateTimeField(auto_now_add=True)
 

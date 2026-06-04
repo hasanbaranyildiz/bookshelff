@@ -62,7 +62,7 @@ def book_detail(request, pk):
 def book_create(request):
     """Yeni kitap ekleme"""
     if request.method == 'POST':
-        form = BookForm(request.POST)
+        form = BookForm(request.POST, request.FILES)
         if form.is_valid():
             book = form.save(commit=False)
             book.owner = request.user
@@ -79,7 +79,7 @@ def book_update(request, pk):
     """Kitap düzenleme"""
     book = get_object_or_404(Book, pk=pk, owner=request.user)
     if request.method == 'POST':
-        form = BookForm(request.POST, instance=book)
+        form = BookForm(request.POST, request.FILES, instance=book)
         if form.is_valid():
             form.save()
             messages.success(request, 'Kitap güncellendi!')
