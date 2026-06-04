@@ -60,5 +60,154 @@
     .tracking-wider {
         letter-spacing: 0.05em;
     }
+
+    /* Autocomplete CSS */
+    .suggestion-box {
+        display: none;
+        position: absolute;
+        width: 100%;
+        background-color: #0f172a;
+        border: 1px solid #334155;
+        border-radius: 0 0 12px 12px;
+        max-height: 200px;
+        overflow-y: auto;
+        z-index: 1050;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+        margin-top: -5px;
+    }
+    .suggestion-item {
+        padding: 10px 15px;
+        cursor: pointer;
+        color: white;
+        border-bottom: 1px solid rgba(255,255,255,0.05);
+        transition: background-color 0.2s;
+    }
+    .suggestion-item:last-child {
+        border-bottom: none;
+    }
+    .suggestion-item:hover {
+        background-color: var(--primary-color, #7c3aed);
+    }
 </style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const titleInput = document.getElementById('id_title');
+    const authorInput = document.getElementById('id_author');
+    const descInput = document.getElementById('id_description');
+    
+    if (!titleInput || !authorInput) return;
+
+    // Elementleri kapsayıcı bir div içine al (position relative için)
+    [titleInput, authorInput].forEach(input => {
+        const wrapper = document.createElement('div');
+        wrapper.style.position = 'relative';
+        input.parentNode.insertBefore(wrapper, input);
+        wrapper.appendChild(input);
+        
+        const box = document.createElement('div');
+        box.className = 'suggestion-box';
+        box.id = input.id + '_suggestions';
+        wrapper.appendChild(box);
+    });
+
+    const titleBox = document.getElementById('id_title_suggestions');
+    const authorBox = document.getElementById('id_author_suggestions');
+    let titleTimeout, authorTimeout;
+
+    // Yazar için Autocomplete
+    authorInput.addEventListener('input', function() {
+        clearTimeout(authorTimeout);
+        const query = this.value.trim();
+        if (query.length < 2) { authorBox.style.display = 'none'; return; }
+
+        authorTimeout = setTimeout(() => {
+            fetch(`https://www.googleapis.com/books/v1/volumes?q=inauthor:${encodeURIComponent(query)}&maxResults=10&langRestrict=tr`)
+                .then(res => res.json())
+                .then(data => {
+                    authorBox.innerHTML = '';
+                    if (data.items) {
+                        const authors = new Set();
+                        data.items.forEach(item => {
+                            if (item.volumeInfo.authors) {
+                                item.volumeInfo.authors.forEach(a => authors.add(a));
+                            }
+                        });
+                        
+                        const authorList = Array.from(authors).filter(a => a.toLowerCase().includes(query.toLowerCase())).slice(0, 5);
+                        
+                        if (authorList.length > 0) {
+                            authorBox.style.display = 'block';
+                            authorList.forEach(author => {
+                                const div = document.createElement('div');
+                                div.className = 'suggestion-item';
+                                div.textContent = author;
+                                div.addEventListener('click', () => {
+                                    authorInput.value = author;
+                                    authorBox.style.display = 'none';
+                                });
+                                authorBox.appendChild(div);
+                            });
+                        } else { authorBox.style.display = 'none'; }
+                    }
+                });
+        }, 400);
+    });
+
+    // Kitap Adı için Autocomplete (Eğer Yazar yazılıysa sadece onun kitaplarını önerir)
+    titleInput.addEventListener('input', function() {
+        clearTimeout(titleTimeout);
+        const query = this.value.trim();
+        const authorQuery = authorInput.value.trim();
+        if (query.length < 2 && authorQuery.length < 2) { titleBox.style.display = 'none'; return; }
+
+        titleTimeout = setTimeout(() => {
+            let apiQuery = '';
+            if (query) apiQuery += `intitle:${encodeURIComponent(query)}`;
+            if (authorQuery) apiQuery += (apiQuery ? '+' : '') + `inauthor:${encodeURIComponent(authorQuery)}`;
+            
+            fetch(`https://www.googleapis.com/books/v1/volumes?q=${apiQuery}&maxResults=10&langRestrict=tr`)
+                .then(res => res.json())
+                .then(data => {
+                    titleBox.innerHTML = '';
+                    if (data.items) {
+                        const seenTitles = new Set();
+                        data.items.forEach(item => {
+                            const title = item.volumeInfo.title || '';
+                            if (!title || seenTitles.has(title.toLowerCase())) return;
+                            seenTitles.add(title.toLowerCase());
+
+                            const div = document.createElement('div');
+                            div.className = 'suggestion-item';
+                            div.textContent = title;
+                            div.addEventListener('click', () => {
+                                titleInput.value = title;
+                                titleBox.style.display = 'none';
+                                
+                                // Yazar veya açıklama boşsa otomatik doldur!
+                                if (!authorInput.value && item.volumeInfo.authors) {
+                                    authorInput.value = item.volumeInfo.authors.join(', ');
+                                }
+                                if (descInput && !descInput.value && item.volumeInfo.description) {
+                                    descInput.value = item.volumeInfo.description;
+                                }
+                            });
+                            titleBox.appendChild(div);
+                        });
+                        if(seenTitles.size > 0) titleBox.style.display = 'block';
+                        else titleBox.style.display = 'none';
+                    } else { titleBox.style.display = 'none'; }
+                });
+        }, 400);
+    });
+
+    // Herhangi bir yere tıklanırsa kutuları kapat
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('div[style*="position: relative"]')) {
+            titleBox.style.display = 'none';
+            authorBox.style.display = 'none';
+        }
+    });
+});
+</script>
 {% endblock %}
