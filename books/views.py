@@ -135,9 +135,11 @@ def add_api_book(request):
         author = request.POST.get('author')
         description = request.POST.get('description')
         
+        thumbnail_url = request.POST.get('thumbnail')
+        
         category, created = Category.objects.get_or_create(name='Genel')
         
-        Book.objects.create(
+        book = Book.objects.create(
             title=title,
             author=author,
             description=description,
@@ -145,6 +147,16 @@ def add_api_book(request):
             owner=request.user,
             status='okunacak'
         )
+        
+        if thumbnail_url:
+            from django.core.files.base import ContentFile
+            import requests
+            try:
+                img_response = requests.get(thumbnail_url)
+                if img_response.status_code == 200:
+                    book.cover_image.save(f"api_cover_{book.id}.jpg", ContentFile(img_response.content), save=True)
+            except Exception as e:
+                pass
         messages.success(request, f'"{title}" kütüphanenize eklendi!')
         return redirect('book_list')
         
