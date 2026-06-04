@@ -7,10 +7,13 @@
             <h1 class="display-5 fw-bold" style="color: var(--text-color);">İnternetten Kitap Ara 🌐</h1>
             <p class="text-muted lead">Aradığın kitabı yaz, anında kütüphanene ekle!</p>
             
-            <form method="GET" action="{% url 'book_search_api' %}" class="d-flex mt-4 shadow-sm" style="border-radius: 50px; overflow: hidden; background: var(--card-bg);">
-                <input type="text" name="q" class="form-control border-0 px-4 py-3" placeholder="Kitap veya yazar adı girin..." value="{{ query }}" style="background: transparent; color: var(--text-color); box-shadow: none;" required>
-                <button type="submit" class="btn btn-primary px-5 fw-bold" style="border-radius: 0;">Ara</button>
-            </form>
+            <div class="position-relative">
+                <form id="searchForm" method="GET" action="{% url 'book_search_api' %}" class="d-flex mt-4 shadow-sm" style="border-radius: 50px; overflow: hidden; background: var(--card-bg);">
+                    <input type="text" id="apiSearchInput" name="q" class="form-control border-0 px-4 py-3" placeholder="Kitap veya yazar adı girin..." value="{{ query }}" style="background: transparent; color: var(--text-color); box-shadow: none;" required autocomplete="off">
+                    <button type="submit" class="btn btn-primary px-5 fw-bold" style="border-radius: 0;">Ara</button>
+                </form>
+                <div id="suggestionsBox" class="text-start shadow position-absolute w-100 mt-2" style="display: none; background: var(--card-bg); border-radius: 16px; max-height: 300px; overflow-y: auto; z-index: 1000; left: 0; border: 1px solid var(--border-color);"></div>
+            </div>
         </div>
     </div>
 
@@ -68,4 +71,88 @@
         </div>
     {% endif %}
 </div>
+
+<style>
+    .suggestion-item {
+        padding: 12px 20px;
+        border-bottom: 1px solid rgba(128,128,128,0.1);
+        cursor: pointer;
+        transition: background-color 0.2s;
+        color: var(--text-color);
+    }
+    .suggestion-item:last-child {
+        border-bottom: none;
+    }
+    .suggestion-item:hover {
+        background-color: rgba(128,128,128,0.1);
+    }
+    .suggestion-title {
+        font-weight: 600;
+        margin-bottom: 2px;
+    }
+    .suggestion-author {
+        font-size: 0.85em;
+        color: var(--text-muted);
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const searchInput = document.getElementById('apiSearchInput');
+        const suggestionsBox = document.getElementById('suggestionsBox');
+        const searchForm = document.getElementById('searchForm');
+        let timeoutId;
+
+        searchInput.addEventListener('input', function() {
+            clearTimeout(timeoutId);
+            const query = this.value.trim();
+            
+            if (query.length < 2) {
+                suggestionsBox.style.display = 'none';
+                return;
+            }
+
+            // Debounce ile 500ms bekle (kullanıcı yazmayı bitirsin)
+            timeoutId = setTimeout(() => {
+                fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=5&langRestrict=tr`)
+                    .then(response => response.json())
+                    .then(data => {
+                        suggestionsBox.innerHTML = '';
+                        if (data.items && data.items.length > 0) {
+                            suggestionsBox.style.display = 'block';
+                            data.items.forEach(item => {
+                                const title = item.volumeInfo.title || 'Bilinmeyen Kitap';
+                                const authors = item.volumeInfo.authors ? item.volumeInfo.authors.join(', ') : '';
+                                
+                                const div = document.createElement('div');
+                                div.className = 'suggestion-item';
+                                div.innerHTML = `<div class="suggestion-title">${title}</div><div class="suggestion-author">${authors}</div>`;
+                                
+                                div.addEventListener('click', () => {
+                                    searchInput.value = title;
+                                    suggestionsBox.style.display = 'none';
+                                    searchForm.submit(); // Tıklanınca otomatik ara
+                                });
+                                
+                                suggestionsBox.appendChild(div);
+                            });
+                        } else {
+                            suggestionsBox.style.display = 'none';
+                        }
+                    })
+                    .catch(err => {
+                        console.error("API hatası:", err);
+                        suggestionsBox.style.display = 'none';
+                    });
+            }, 400);
+        });
+
+        // Tıklama dışarıysa kapat
+        document.addEventListener('click', function(e) {
+            if (e.target !== searchInput && e.target !== suggestionsBox) {
+                suggestionsBox.style.display = 'none';
+            }
+        });
+    });
+</script>
 {% endblock %}
