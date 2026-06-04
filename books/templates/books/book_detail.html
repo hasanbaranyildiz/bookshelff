@@ -24,6 +24,9 @@
                                     {% else %}bg-danger-subtle text-danger{% endif %} px-3 py-2 rounded-pill mb-3">
                                     {{ book.get_status_display }}
                                 </span>
+                                <span class="badge bg-secondary-subtle text-secondary px-3 py-2 rounded-pill mb-3 ms-2">
+                                    <i class="fas fa-eye me-1"></i> {{ book.views_count }} Görüntülenme
+                                </span>
                                 <h1 class="display-6 fw-bold text-white mb-2">{{ book.title }}</h1>
                                 <p class="fs-5 text-muted"><i class="fas fa-pen-nib me-2"></i>{{ book.author }}</p>
                             </div>

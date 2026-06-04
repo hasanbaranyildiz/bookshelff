@@ -26,6 +26,7 @@ class Book(models.Model):
     category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True)
     owner = models.ForeignKey(User, on_delete=models.CASCADE)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='okunacak')
+    views_count = models.PositiveIntegerField(default=0, verbose_name="Görüntülenme Sayısı")
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

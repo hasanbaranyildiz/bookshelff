@@ -39,6 +39,11 @@ def book_list(request):
 def book_detail(request, pk):
     """Kitap detay sayfası"""
     book = get_object_or_404(Book, pk=pk)
+    
+    # Görüntülenme sayısını artır
+    book.views_count += 1
+    book.save(update_fields=['views_count'])
+    
     comments = book.comments.all().order_by('-created_at')
     total_comments = comments.count()
     recommended_count = comments.filter(is_recommended=True).count()

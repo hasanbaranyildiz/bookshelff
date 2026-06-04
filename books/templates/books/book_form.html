@@ -115,46 +115,116 @@ document.addEventListener('DOMContentLoaded', function() {
     const authorBox = document.getElementById('id_author_suggestions');
     let titleTimeout, authorTimeout;
 
-    // Yazar için Autocomplete
+    // Türk ve Dünya edebiyatından popüler yazarlar (boşken görünür)
+    const DEFAULT_AUTHORS = [
+        // Türk Yazarlar
+        'Orhan Pamuk', 'Elif Şafak', 'Ahmet Ümit', 'Yaşar Kemal',
+        'Sabahattin Ali', 'Halide Edib Adıvar', 'Refik Halit Karay',
+        'Nazlı Eray', 'Zülfü Livaneli', 'Ayşe Kulin', 'Perihan Mağden',
+        'Buket Uzuner', 'İnci Aral', 'Peyami Safa', 'Tarık Buğra',
+        'Attilâ İlhan', 'Cemil Meriç', 'Aziz Nesin', 'Hasan Ali Toptaş',
+        'Mehmet Murat İldan', 'İhsan Oktay Anar', 'Nermin Bezmen',
+        'Murathan Mungan', 'Can Yücel', 'Sait Faik Abasıyanık',
+        // Dünya Yazarları
+        'Leo Tolstoy', 'Fyodor Dostoyevski', 'Franz Kafka', 'Albert Camus',
+        'Gabriel García Márquez', 'Ernest Hemingway', 'George Orwell',
+        'Jane Austen', 'Victor Hugo', 'Fyodor Dostoyevsky', 'F. Scott Fitzgerald',
+        'J.R.R. Tolkien', 'J.K. Rowling', 'Stephen King', 'Paulo Coelho',
+        'Haruki Murakami', 'Milan Kundera', 'Umberto Eco', 'Antoine de Saint-Exupéry',
+        'Oscar Wilde', 'Charles Dickens', 'Agatha Christie', 'Arthur Conan Doyle',
+        'Jules Verne', 'Mark Twain', 'Hermann Hesse', 'Stefan Zweig',
+        'Simone de Beauvoir', 'Jean-Paul Sartre', 'Marcel Proust', 'Gustave Flaubert',
+        'Honoré de Balzac', 'Émile Zola', 'Stendhal', 'Aleksandr Pushkin',
+        'Anton Chekhov', 'Maxim Gorky', 'Boris Pasternak', 'Mikhail Bulgakov'
+    ];
+
+    function showDefaultAuthors(filterText) {
+        authorBox.innerHTML = '';
+        const filtered = filterText 
+            ? DEFAULT_AUTHORS.filter(a => a.toLowerCase().includes(filterText.toLowerCase()))
+            : DEFAULT_AUTHORS;
+        const toShow = filtered.slice(0, 8);
+        if (toShow.length === 0) return;
+        toShow.forEach(author => {
+            const div = document.createElement('div');
+            div.className = 'suggestion-item';
+            div.innerHTML = `<i class="fas fa-user-edit me-2 text-primary opacity-50" style="font-size:0.8em"></i>${author}`;
+            div.addEventListener('click', () => {
+                authorInput.value = author;
+                authorBox.style.display = 'none';
+                // Yazar seçilince o yazarın kitaplarını title inputa hazırla
+                titleBox.innerHTML = '';
+            });
+            authorBox.appendChild(div);
+        });
+        authorBox.style.display = 'block';
+    }
+
+    // Yazar kutusuna tıklanınca (boşken) default listesini göster
+    authorInput.addEventListener('focus', function() {
+        if (this.value.trim().length < 2) {
+            showDefaultAuthors('');
+        }
+    });
+
+    // Yazar için Autocomplete (yazmaya başlayınca Google'dan çek)
     authorInput.addEventListener('input', function() {
         clearTimeout(authorTimeout);
         const query = this.value.trim();
-        if (query.length < 2) { authorBox.style.display = 'none'; return; }
+        
+        if (query.length < 2) {
+            showDefaultAuthors('');
+            return;
+        }
 
+        // Önce default listeden filtrele (anlık)
+        showDefaultAuthors(query);
+
+        // Paralelde Google'dan da çek (daha fazla sonuç için)
         authorTimeout = setTimeout(() => {
-            fetch(`https://www.googleapis.com/books/v1/volumes?q=inauthor:${encodeURIComponent(query)}&maxResults=10&langRestrict=tr`)
+            // langRestrict kaldırıldı, tüm yazarlar gelsin
+            fetch(`https://www.googleapis.com/books/v1/volumes?q=inauthor:${encodeURIComponent(query)}&maxResults=15`)
                 .then(res => res.json())
                 .then(data => {
-                    authorBox.innerHTML = '';
                     if (data.items) {
-                        const authors = new Set();
+                        const apiAuthors = new Set();
                         data.items.forEach(item => {
                             if (item.volumeInfo.authors) {
-                                item.volumeInfo.authors.forEach(a => authors.add(a));
+                                item.volumeInfo.authors.forEach(a => {
+                                    if (a.toLowerCase().includes(query.toLowerCase())) {
+                                        apiAuthors.add(a);
+                                    }
+                                });
                             }
                         });
-                        
-                        const authorList = Array.from(authors).filter(a => a.toLowerCase().includes(query.toLowerCase())).slice(0, 5);
-                        
-                        if (authorList.length > 0) {
+
+                        // Default listesiyle birleştir (API sonuçlarını üste ekle)
+                        const combined = Array.from(apiAuthors).slice(0, 5);
+                        const defaultFiltered = DEFAULT_AUTHORS.filter(a => 
+                            a.toLowerCase().includes(query.toLowerCase()) && !combined.includes(a)
+                        ).slice(0, 3);
+                        const allAuthors = [...combined, ...defaultFiltered];
+
+                        if (allAuthors.length > 0) {
+                            authorBox.innerHTML = '';
                             authorBox.style.display = 'block';
-                            authorList.forEach(author => {
+                            allAuthors.forEach(author => {
                                 const div = document.createElement('div');
                                 div.className = 'suggestion-item';
-                                div.textContent = author;
+                                div.innerHTML = `<i class="fas fa-user-edit me-2 text-primary opacity-50" style="font-size:0.8em"></i>${author}`;
                                 div.addEventListener('click', () => {
                                     authorInput.value = author;
                                     authorBox.style.display = 'none';
                                 });
                                 authorBox.appendChild(div);
                             });
-                        } else { authorBox.style.display = 'none'; }
+                        }
                     }
-                });
+                }).catch(() => {}); // Sessizce geç
         }, 400);
     });
 
-    // Kitap Adı için Autocomplete (Eğer Yazar yazılıysa sadece onun kitaplarını önerir)
+    // Kitap Adı için Autocomplete (Yazar yazılıysa sadece onun kitaplarını önerir)
     titleInput.addEventListener('input', function() {
         clearTimeout(titleTimeout);
         const query = this.value.trim();
@@ -166,7 +236,8 @@ document.addEventListener('DOMContentLoaded', function() {
             if (query) apiQuery += `intitle:${encodeURIComponent(query)}`;
             if (authorQuery) apiQuery += (apiQuery ? '+' : '') + `inauthor:${encodeURIComponent(authorQuery)}`;
             
-            fetch(`https://www.googleapis.com/books/v1/volumes?q=${apiQuery}&maxResults=10&langRestrict=tr`)
+            // langRestrict kaldırıldı — tüm dillerdeki kitaplar gelsin
+            fetch(`https://www.googleapis.com/books/v1/volumes?q=${apiQuery}&maxResults=15`)
                 .then(res => res.json())
                 .then(data => {
                     titleBox.innerHTML = '';
@@ -179,7 +250,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
                             const div = document.createElement('div');
                             div.className = 'suggestion-item';
-                            div.textContent = title;
+                            const author = item.volumeInfo.authors ? item.volumeInfo.authors[0] : '';
+                            div.innerHTML = `<span class="fw-semibold">${title}</span>${author ? `<small class="text-secondary ms-2">— ${author}</small>` : ''}`;
                             div.addEventListener('click', () => {
                                 titleInput.value = title;
                                 titleBox.style.display = 'none';
