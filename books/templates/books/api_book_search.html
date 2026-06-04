@@ -1,0 +1,71 @@
+{% extends "books/base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8 text-center mb-5">
+            <h1 class="display-5 fw-bold" style="color: var(--text-color);">İnternetten Kitap Ara 🌐</h1>
+            <p class="text-muted lead">Aradığın kitabı yaz, anında kütüphanene ekle!</p>
+            
+            <form method="GET" action="{% url 'book_search_api' %}" class="d-flex mt-4 shadow-sm" style="border-radius: 50px; overflow: hidden; background: var(--card-bg);">
+                <input type="text" name="q" class="form-control border-0 px-4 py-3" placeholder="Kitap veya yazar adı girin..." value="{{ query }}" style="background: transparent; color: var(--text-color); box-shadow: none;" required>
+                <button type="submit" class="btn btn-primary px-5 fw-bold" style="border-radius: 0;">Ara</button>
+            </form>
+        </div>
+    </div>
+
+    {% if query %}
+        <div class="row">
+            <div class="col-12 mb-4">
+                <h4 style="color: var(--text-color);">"{{ query }}" için arama sonuçları:</h4>
+            </div>
+            
+            {% if books %}
+                {% for book in books %}
+                <div class="col-md-6 col-lg-4 mb-4">
+                    <div class="card h-100 border-0 shadow-sm" style="background-color: var(--card-bg); border-radius: 16px; overflow: hidden; transition: transform 0.2s;">
+                        <div class="row g-0 h-100">
+                            <div class="col-4 p-3 d-flex align-items-center justify-content-center">
+                                {% if book.thumbnail %}
+                                    <img src="{{ book.thumbnail }}" class="img-fluid rounded shadow" alt="{{ book.title }}" style="max-height: 150px; object-fit: cover;">
+                                {% else %}
+                                    <div class="bg-secondary rounded d-flex align-items-center justify-content-center text-white" style="height: 150px; width: 100px;">
+                                        <i class="fas fa-book fa-2x"></i>
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-8">
+                                <div class="card-body d-flex flex-column h-100">
+                                    <h5 class="card-title fw-bold" style="color: var(--text-color);">{{ book.title }}</h5>
+                                    <p class="card-text small text-muted mb-2"><i class="fas fa-user-edit me-1"></i> {{ book.author }}</p>
+                                    <p class="card-text small mb-3" style="color: var(--text-color); opacity: 0.8; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;">
+                                        {{ book.description }}
+                                    </p>
+                                    <div class="mt-auto">
+                                        <form method="POST" action="{% url 'add_api_book' %}">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="title" value="{{ book.title }}">
+                                            <input type="hidden" name="author" value="{{ book.author }}">
+                                            <input type="hidden" name="description" value="{{ book.description }}">
+                                            <button type="submit" class="btn btn-success w-100 rounded-pill fw-bold">
+                                                <i class="fas fa-plus me-1"></i> Kütüphaneme Ekle
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="col-12 text-center py-5">
+                    <i class="fas fa-search-minus fa-4x text-muted mb-3"></i>
+                    <h3 class="text-muted">Sonuç bulunamadı</h3>
+                    <p class="text-muted">Lütfen farklı kelimelerle tekrar deneyin.</p>
+                </div>
+            {% endif %}
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

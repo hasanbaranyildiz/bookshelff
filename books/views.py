@@ -1,4 +1,5 @@
 import json
+import requests
 from django.http import JsonResponse
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
@@ -93,6 +94,56 @@ def book_delete(request, pk):
         return redirect('book_list')
     return render(request, 'books/book_confirm_delete.html', {'book': book})
 
+
+@login_required
+def book_search_api(request):
+    """Google Books API üzerinden kitap arama"""
+    query = request.GET.get('q', '')
+    books_data = []
+    
+    if query:
+        url = f"https://www.googleapis.com/books/v1/volumes?q={query}&maxResults=10"
+        response = requests.get(url)
+        
+        if response.status_code == 200:
+            data = response.json()
+            items = data.get('items', [])
+            
+            for item in items:
+                vol_info = item.get('volumeInfo', {})
+                books_data.append({
+                    'id': item.get('id'),
+                    'title': vol_info.get('title', 'Bilinmeyen Başlık'),
+                    'author': ", ".join(vol_info.get('authors', ['Bilinmeyen Yazar'])),
+                    'description': vol_info.get('description', 'Açıklama bulunmuyor.'),
+                    'thumbnail': vol_info.get('imageLinks', {}).get('thumbnail', ''),
+                })
+                
+    return render(request, 'books/api_book_search.html', {'books': books_data, 'query': query})
+
+
+@login_required
+def add_api_book(request):
+    """API'den gelen verilerle otomatik kitap ekleme"""
+    if request.method == 'POST':
+        title = request.POST.get('title')
+        author = request.POST.get('author')
+        description = request.POST.get('description')
+        
+        category, created = Category.objects.get_or_create(name='Genel')
+        
+        Book.objects.create(
+            title=title,
+            author=author,
+            description=description,
+            category=category,
+            owner=request.user,
+            status='okunacak'
+        )
+        messages.success(request, f'"{title}" kütüphanenize eklendi!')
+        return redirect('book_list')
+        
+    return redirect('book_search_api')
 
 def signup(request):
     """Kullanıcı kayıt sayfası"""
