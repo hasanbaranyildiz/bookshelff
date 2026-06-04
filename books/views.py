@@ -107,26 +107,50 @@ def book_search_api(request):
     books_data = []
     
     if query:
-        url = f"https://www.googleapis.com/books/v1/volumes?q={query}&maxResults=12"
+        url = f"https://www.dr.com.tr/search?q={query}"
     else:
-        # Varsayılan popüler kitaplar (Dünya klasikleri ve Türk yazarlar)
-        url = "https://www.googleapis.com/books/v1/volumes?q=inauthor:Sabahattin Ali+OR+inauthor:Tolstoy+OR+inauthor:Dostoyevski+OR+intitle:Şeker Portakalı+OR+intitle:Suç ve Ceza&maxResults=12&orderBy=relevance"
+        url = "https://www.dr.com.tr/search?q=dunya+klasikleri"
         
     try:
-        response = requests.get(url)
+        import json
+        from bs4 import BeautifulSoup
+        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
+        response = requests.get(url, headers=headers)
         
         if response.status_code == 200:
-            data = response.json()
-            items = data.get('items', [])
+            soup = BeautifulSoup(response.text, 'html.parser')
+            items = soup.find_all('div', class_='product-card')[:12]
             
             for item in items:
-                vol_info = item.get('volumeInfo', {})
+                gtm_data = item.get('data-gtm')
+                title = "Bilinmeyen Başlık"
+                author = "Bilinmeyen Yazar"
+                
+                if gtm_data:
+                    try:
+                        gtm_json = json.loads(gtm_data)
+                        title = gtm_json.get('item_name', title)
+                        author = gtm_json.get('author', author)
+                    except:
+                        pass
+                        
+                img_tag = item.find('img')
+                thumbnail = ""
+                if img_tag:
+                    thumbnail = img_tag.get('data-src') or img_tag.get('src', '')
+                    
+                if not thumbnail and item.find('a', class_='js-search-prd-item'):
+                    # Bazen resim child div içinde oluyor
+                    inner_div = item.find('div', class_='js-prd-img-first')
+                    if inner_div:
+                        thumbnail = inner_div.get('data-image-url', '')
+                        
                 books_data.append({
-                    'id': item.get('id'),
-                    'title': vol_info.get('title', 'Bilinmeyen Başlık'),
-                    'author': ", ".join(vol_info.get('authors', ['Bilinmeyen Yazar'])),
-                    'description': vol_info.get('description', 'Açıklama bulunmuyor.'),
-                    'thumbnail': vol_info.get('imageLinks', {}).get('thumbnail', ''),
+                    'id': item.get('data-id', ''),
+                    'title': title,
+                    'author': author,
+                    'description': 'D&R veritabanından çekildi.',
+                    'thumbnail': thumbnail,
                 })
     except requests.RequestException:
         pass
